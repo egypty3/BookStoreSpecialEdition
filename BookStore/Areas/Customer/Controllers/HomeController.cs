@@ -13,36 +13,36 @@ namespace BookStore.Areas.Customer.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-		private ApplicationDbContext _db;
+        private ApplicationDbContext _db;
 
-		public HomeController(ILogger<HomeController> logger, ApplicationDbContext db)
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext db)
         {
-			_db = db;
-			_logger = logger;
+            _db = db;
+            _logger = logger;
         }
 
         public IActionResult Index()
         {
-			IEnumerable<Product> productList = _db.Products
-				.Include(p => p.Category)
-				.Include(p => p.CoverType)
-				.ToList();
+            IEnumerable<Product> productList = _db.Products
+                .Include(p => p.Category)
+                .Include(p => p.CoverType)
+                .ToList();
 
-			return View(productList);
-		}
-		public IActionResult Details(int productId)
-		{
-			ShoppingCart cartObj = new()
-			{
-				Count = 1,
-				ProductId = productId,
-				Product = _db.Products
-				.Include(p => p.Category)
-				.Include(p => p.CoverType).FirstOrDefault(u => u.Id == productId)
-			};
+            return View(productList);
+        }
+        public IActionResult Details(int productId)
+        {
+            ShoppingCart cartObj = new()
+            {
+                Count = 1,
+                ProductId = productId,
+                Product = _db.Products
+                .Include(p => p.Category)
+                .Include(p => p.CoverType).FirstOrDefault(u => u.Id == productId)
+            };
 
-			return View(cartObj);
-		}
+            return View(cartObj);
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
@@ -51,9 +51,28 @@ namespace BookStore.Areas.Customer.Controllers
             var claimsIdentity = (ClaimsIdentity)User.Identity;
             var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
             shoppingCart.ApplicationUserId = claim.Value;
-            
-            _db.ShoppingCarts.Add(shoppingCart);
-            _db.SaveChanges();
+
+
+            ShoppingCart cartFromDb = _db.ShoppingCarts.FirstOrDefault(
+          u => u.ApplicationUserId == claim.Value && u.ProductId == shoppingCart.ProductId);
+
+
+            if (cartFromDb == null)
+            {
+
+                _db.ShoppingCarts.Add(shoppingCart);
+                _db.SaveChanges();
+                //HttpContext.Session.SetInt32(SD.SessionCart,
+                //    _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == claim.Value).ToList().Count);
+            }
+            else
+            {
+                 cartFromDb.Count += shoppingCart.Count;
+                _db.ShoppingCarts.Update(cartFromDb);
+                _db.SaveChanges();
+            }
+            //_db.ShoppingCarts.Add(shoppingCart);
+            //_db.SaveChanges();
 
 
             return RedirectToAction(nameof(Index));
