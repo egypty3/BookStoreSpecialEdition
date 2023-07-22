@@ -1,0 +1,25 @@
+﻿@model List<MobilePhone>
+
+<table class="table table-striped">
+	<thead>
+		<tr class="table-primary">
+			<td>Id</td>
+			<td>Manficuture Company</td>
+			<td>Phone Model</td>
+			<td>Release Date</td>
+			<td>FrontCam MegaPixels</td>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var item in Model)
+		{
+			<tr>
+				<td>@item.Id</td>
+				<td>@item.ManficutureCompany</td>
+				<td>@item.PhoneModel</td>
+				<td>@item.ReleaseDate.ToLongDateString()</td>
+				<td>@item.FrontCamMegaPixels MegaPixel</td>
+			</tr>
+		}
+	</tbody>
+</table>
