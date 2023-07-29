@@ -199,9 +199,9 @@ namespace BookStore.Areas.Customer.Controllers
 				.Where(u => u.ApplicationUserId == orderHeader.ApplicationUserId)
 				.ToList();
 
-			_db.ShoppingCarts.RemoveRange(ShoppingCartVM.ListCart);
+			_db.ShoppingCarts.RemoveRange(shoppingCarts);
 			_db.SaveChanges();
-			return RedirectToAction("Index", "Home");
+			return View(id);
 		}
 		public IActionResult Plus(int cartId)
 		{
