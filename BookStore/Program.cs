@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Utility;
+using Stripe;
 
 namespace BookStore
 {
@@ -23,8 +24,8 @@ namespace BookStore
 								)
 					)
 				);
-
-            builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddDefaultTokenProviders()
+			builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+			builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddDefaultTokenProviders()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             builder.Services.AddSingleton<IEmailSender, EmailSender>();
 
@@ -49,6 +50,7 @@ namespace BookStore
 			app.UseStaticFiles();
 
 			app.UseRouting();
+			StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Get<string>();
 			app.UseAuthentication();
 			app.UseAuthorization();
 			app.MapRazorPages();

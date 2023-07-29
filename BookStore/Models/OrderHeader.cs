@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Policy;
 
 namespace BookStore.Models
 {
@@ -23,7 +24,7 @@ namespace BookStore.Models
 		public DateTime PaymentDate { get; set; }
 		public DateTime PaymentDueDate { get; set; }
 
-		public string? SessionId { get; set; }
+		public string? SessionId { get; set; }		
 		public string? PaymentIntentId { get; set; }
 
 		[Required]
