@@ -8,6 +8,7 @@ using BookStore.Data;
 using BookStore.Models;
 using BookStore.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Utility;
@@ -28,6 +29,29 @@ namespace Admin.Controllers
             return View();
         }
         public IActionResult Details(int orderId)
+        {
+            var orderHeaderFromDb = _db.OrderHeaders.FirstOrDefault(u => u.Id == OrderVM.OrderHeader.Id);
+            orderHeaderFromDb.Name = OrderVM.OrderHeader.Name;
+            orderHeaderFromDb.PhoneNumber = OrderVM.OrderHeader.PhoneNumber;
+            orderHeaderFromDb.StreetAddress = OrderVM.OrderHeader.StreetAddress;
+            orderHeaderFromDb.City = OrderVM.OrderHeader.City;
+            orderHeaderFromDb.State = OrderVM.OrderHeader.State;
+            orderHeaderFromDb.PostalCode = OrderVM.OrderHeader.PostalCode;
+            if (OrderVM.OrderHeader.Carrier != null)
+            {
+                orderHeaderFromDb.Carrier = OrderVM.OrderHeader.Carrier;
+            }
+            if (OrderVM.OrderHeader.TrackingNumber != null)
+            {
+                orderHeaderFromDb.TrackingNumber = OrderVM.OrderHeader.TrackingNumber;
+            }
+            _db.OrderHeaders.Update(orderHeaderFromDb);
+            _db.SaveChanges();
+            return View(OrderVM);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateOrderDetailDetail()
         {
             OrderVM = new OrderVM()
             {

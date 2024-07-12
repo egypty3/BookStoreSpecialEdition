@@ -167,6 +167,7 @@ namespace BookStore.Areas.Customer.Controllers
 				Session session = service.Create(options);
 
 				ShoppingCartVM.OrderHeader.SessionId = session.Id;
+				ShoppingCartVM.OrderHeader.PaymentDate = DateTime.Now;
 				ShoppingCartVM.OrderHeader.PaymentIntentId = session.PaymentIntentId;
 
 				_db.OrderHeaders.Update(ShoppingCartVM.OrderHeader);
