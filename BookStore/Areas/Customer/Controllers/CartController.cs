@@ -126,52 +126,60 @@ namespace BookStore.Areas.Customer.Controllers
 				_db.OrderDetail.Add(orderDetail);
 			}
 			_db.SaveChanges();
-			
-			// stripe settings
-			var domain = "https://localhost:5013/";
-			var options = new SessionCreateOptions
+
+			if (applicationUser.CompanyId.GetValueOrDefault() == 0)
 			{
-				PaymentMethodTypes = new List<string>
+				// stripe settings
+				var domain = "https://localhost:5013/";
+				var options = new SessionCreateOptions
 				{
-				  "card",
+					PaymentMethodTypes = new List<string>
+				{
+					"card",
 				},
-				LineItems = new List<SessionLineItemOptions>(),				
-				Mode = "payment",
-				SuccessUrl = domain + $"customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
-				CancelUrl = domain + $"customer/cart/index",
-			};
-			
-			foreach (var item in ShoppingCartVM.ListCart)
-			{
-
-				var sessionLineItem = new SessionLineItemOptions
-				{
-					PriceData = new SessionLineItemPriceDataOptions
-					{
-						UnitAmount = (long)(item.Price * 100),//20.00 -> 2000
-						Currency = "usd",
-						ProductData = new SessionLineItemPriceDataProductDataOptions
-						{
-							Name = item.Product.Title
-						},
-
-					},
-					Quantity = item.Count,
+					LineItems = new List<SessionLineItemOptions>(),
+					Mode = "payment",
+					SuccessUrl = domain + $"customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
+					CancelUrl = domain + $"customer/cart/index",
 				};
-				options.LineItems.Add(sessionLineItem);
 
+				foreach (var item in ShoppingCartVM.ListCart)
+				{
+
+					var sessionLineItem = new SessionLineItemOptions
+					{
+						PriceData = new SessionLineItemPriceDataOptions
+						{
+							UnitAmount = (long)(item.Price * 100),//20.00 -> 2000
+							Currency = "usd",
+							ProductData = new SessionLineItemPriceDataProductDataOptions
+							{
+								Name = item.Product.Title
+							},
+
+						},
+						Quantity = item.Count,
+					};
+					options.LineItems.Add(sessionLineItem);
+
+				}
+				var service = new SessionService();
+				Session session = service.Create(options);
+
+				ShoppingCartVM.OrderHeader.SessionId = session.Id;
+				ShoppingCartVM.OrderHeader.PaymentIntentId = session.PaymentIntentId;
+
+				_db.OrderHeaders.Update(ShoppingCartVM.OrderHeader);
+				_db.SaveChanges();
+
+				Response.Headers.Add("Location", session.Url);
+				return new StatusCodeResult(303);
 			}
-			var service = new SessionService();
-			Session session = service.Create(options);
-
-			ShoppingCartVM.OrderHeader.SessionId = session.Id;
-			ShoppingCartVM.OrderHeader.PaymentIntentId = session.PaymentIntentId;
-
-			_db.OrderHeaders.Update(ShoppingCartVM.OrderHeader);
-			_db.SaveChanges();
-
-			Response.Headers.Add("Location", session.Url);
-			return new StatusCodeResult(303);
+			else
+			{
+				return RedirectToAction("OrderConfirmation", "Cart", new { id = ShoppingCartVM.OrderHeader.Id });
+				//
+			}
 
 			//_db.ShoppingCarts.RemoveRange(ShoppingCartVM.ListCart);
 			//_db.SaveChanges();
@@ -183,16 +191,20 @@ namespace BookStore.Areas.Customer.Controllers
 				.Include(u => u.ApplicationUser)
 				.FirstOrDefault(u => u.Id == id);
 
-			var service = new SessionService();
-			Session session = service.Get(orderHeader.SessionId);
-			// check the stripe status
-			if (session.PaymentStatus == "paid")
+			if (orderHeader.PaymentStatus != SD.PaymentStatusDelayedPayment)
 			{
-				orderHeader.PaymentStatus = SD.PaymentStatusApproved;
-				orderHeader.OrderStatus = SD.StatusApproved;
-				_db.OrderHeaders.Update(orderHeader);
-				_db.SaveChanges();
+				var service = new SessionService();
+				Session session = service.Get(orderHeader.SessionId);
+				// check the stripe status
+				if (session.PaymentStatus == "paid")
+				{
+					orderHeader.PaymentStatus = SD.PaymentStatusApproved;
+					orderHeader.OrderStatus = SD.StatusApproved;
+					_db.OrderHeaders.Update(orderHeader);
+					_db.SaveChanges();
+				}
 			}
+
 
 			List<ShoppingCart> shoppingCarts = _db.ShoppingCarts
 				.Include(s => s.Product)
