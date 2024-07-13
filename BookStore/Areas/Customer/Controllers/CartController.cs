@@ -199,6 +199,7 @@ namespace BookStore.Areas.Customer.Controllers
 				// check the stripe status
 				if (session.PaymentStatus == "paid")
 				{
+					orderHeader.PaymentIntentId = session.PaymentIntentId;
 					orderHeader.PaymentStatus = SD.PaymentStatusApproved;
 					orderHeader.OrderStatus = SD.StatusApproved;
 					_db.OrderHeaders.Update(orderHeader);
