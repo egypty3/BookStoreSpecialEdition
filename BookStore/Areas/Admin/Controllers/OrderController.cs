@@ -24,11 +24,27 @@ namespace Admin.Controllers
         [BindProperty]
         public OrderVM OrderVM { get; set; }
 
+        public OrderController(ApplicationDbContext db)
+        {
+            _db = db;
+        }
         public IActionResult Index()
         {
             return View();
         }
         public IActionResult Details(int orderId)
+        {
+            OrderVM = new OrderVM()
+            {
+                OrderHeader = _db.OrderHeaders.Include(u => u.ApplicationUser).FirstOrDefault(u => u.Id == orderId),
+                OrderDetail = _db.OrderDetail.Include(u => u.Product).Where(u => u.OrderId == orderId).ToList()
+            };
+            return View(OrderVM);
+
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateOrderDetail()
         {
             var orderHeaderFromDb = _db.OrderHeaders.FirstOrDefault(u => u.Id == OrderVM.OrderHeader.Id);
             orderHeaderFromDb.Name = OrderVM.OrderHeader.Name;
@@ -47,23 +63,39 @@ namespace Admin.Controllers
             }
             _db.OrderHeaders.Update(orderHeaderFromDb);
             _db.SaveChanges();
-            return View(OrderVM);
+            TempData["Success"] = "Order Details Updated Successfully";
+            return RedirectToAction("Details", "Order", new { orderId = orderHeaderFromDb.Id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult StartProcessing()
+        {
+            var orderHeaderFromDb = _db.OrderHeaders.FirstOrDefault(u => u.Id == OrderVM.OrderHeader.Id);
+            if (orderHeaderFromDb != null)
+            {
+                orderHeaderFromDb.OrderStatus = SD.StatusInProcess;
+            }
+            _db.OrderHeaders.Update(orderHeaderFromDb);
+            _db.SaveChanges();
+            TempData["Success"] = "Order Status Updated Successfully";
+            return RedirectToAction("Details", "Order", new { orderId = orderHeaderFromDb.Id });
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult UpdateOrderDetailDetail()
+        public IActionResult ShipOrder()
         {
-            OrderVM = new OrderVM()
-            {
-                OrderHeader = _db.OrderHeaders.Include(u => u.ApplicationUser).FirstOrDefault(u => u.Id == orderId),
-                OrderDetail = _db.OrderDetail.Include(u => u.Product).Where(u => u.OrderId == orderId).ToList()
-            };
-            return View(OrderVM);
+            var orderHeader = _db.OrderHeaders.FirstOrDefault(u => u.Id == OrderVM.OrderHeader.Id);
+            orderHeader.TrackingNumber = OrderVM.OrderHeader.TrackingNumber;
+            orderHeader.Carrier = OrderVM.OrderHeader.Carrier;
+            orderHeader.OrderStatus = SD.StatusShipped;
+            orderHeader.ShippingDate = DateTime.Now;
+            _db.OrderHeaders.Update(orderHeader);
+            _db.SaveChanges();
+            TempData["Success"] = "Order Shipped Successfully.";
+            return RedirectToAction("Details", "Order", new { orderId = OrderVM.OrderHeader.Id });
         }
-        public OrderController(ApplicationDbContext db)
-        {
-            _db = db;
-        }
+
         #region API CALLs
         [HttpGet]
         public IActionResult GetALL(string status)
