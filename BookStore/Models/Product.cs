@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookStore.Models
 {
+	[Index("ISBN", IsUnique = true)]
 	public class Product
 	{
         public int Id { get; set; }
@@ -11,6 +13,7 @@ namespace BookStore.Models
 		public string Title { get; set; }
 		public string Description { get; set; }
 		[Required]
+		
 		public string ISBN { get; set; }
 		[Required]
         public string Author { get; set; }
