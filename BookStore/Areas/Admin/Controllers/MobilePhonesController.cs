@@ -1,8 +1,9 @@
 ﻿using BookStore.Data;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BookStore.Controllers
+namespace BookStore.Areas.Admin.Controllers
 {
+	[Area("Admin")]
 	public class MobilePhonesController : Controller
 	{
 		public IActionResult Index()
